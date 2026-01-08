@@ -4,6 +4,9 @@ FROM python:3.11-slim
 # set work directory
 WORKDIR /usr/src/app
 
+RUN apt-get update && apt-get install -y ffmpeg
+
+
 RUN mkdir -p /usr/src/app/logs
 
 ENV PYTHONPATH=/usr/src/app

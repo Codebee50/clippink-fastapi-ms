@@ -1,4 +1,5 @@
 
+from pathlib import Path
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 from functools import cached_property
@@ -14,9 +15,11 @@ class AppModule():
 
 class Settings(BaseSettings):
     VERSION: str = "0.0.1"
+    ELEVEN_LABS_API_KEY: str = "YOUR_ELEVENLABS_API_KEY"
     CELERY_BROKER_URL: str = "redis://localhost:6379"
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379"
     DATABASE_URL: str = "sqlite://db.sqlite3"
+    OUTPUT_DIR: Path = Path("elevenlabs_audio")
     
     APP_MODULES: list[AppModule] = [
        AppModule(name="video", module="app.video", db_models="app.video.models")
@@ -42,5 +45,12 @@ class Settings(BaseSettings):
         env_file = ".env"
         case_sensitive= True
     
+    def model_post_init(self, __context) -> None:
+        try:
+            self.OUTPUT_DIR.mkdir(exist_ok=True)
+        except Exception as e:
+            print(f"Error creating output directory: {e}")
+            
     
 settings = Settings()
+

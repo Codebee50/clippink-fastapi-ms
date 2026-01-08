@@ -1,0 +1,50 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_DB: clippink_microservice_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: beepost
+    volumes:
+      - clippink_ms_postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    container_name: db
+
+  web:
+    build: .
+    ports:
+      - 9000:9000
+    command: ['honcho', 'start','-f', 'Procfile']
+    volumes:
+      - .:/usr/src/app
+    env_file:
+      - ./app/.env
+    container_name: clippink-fastapi
+    depends_on:
+      - redis
+      - db
+
+  worker:
+    build: .
+    command: celery -A app.worker.celery worker --loglevel=info --pool=eventlet
+    volumes:
+      - .:/usr/src/app
+    env_file:
+      - ./app/.env
+    container_name: celery-worker
+    depends_on:
+      - web
+      - redis
+
+  redis:
+    image: redis:7
+    container_name: redis
+
+volumes:
+  clippink_ms_postgres_data:
+
+
+    

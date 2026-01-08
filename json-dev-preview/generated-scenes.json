@@ -1,0 +1,66 @@
+[
+  {
+    "order_number": 1,
+    "narration": "Imagine walking with the pharaohs, rulers of ancient Egypt, where power and mystery reign!",
+    "visual_prompt": "A sweeping view of the Pyramids of Giza at sunset, with shadows stretching across the desert, evoking a sense of ancient power and mystery.",
+    "duration_seconds": 5,
+    "mood": "mysterious",
+    "visual_type": "video"
+  },
+  {
+    "order_number": 2,
+    "narration": "Meet King Tutankhamun, the boy king with a golden mask, whose tomb left a legacy.",
+    "visual_prompt": "A close-up of King Tutankhamun's golden mask, glimmering under soft light, surrounded by hieroglyphics and treasures from his tomb.",
+    "duration_seconds": 4,
+    "mood": "inspiring",
+    "visual_type": "image"
+  },
+  {
+    "order_number": 3,
+    "narration": "Then, Ramses II, the warrior king, who built temples that touched the sky, but did he really win the Battle of Kadesh?",
+    "visual_prompt": "A majestic view of the temples of Ramses II, with towering columns and intricate carvings, set against a bright blue sky.",
+    "duration_seconds": 5,
+    "mood": "dramatic",
+    "visual_type": "video"
+  },
+  {
+    "order_number": 4,
+    "narration": "Next, Cleopatra, the last queen, who charmed Rome but sought Egypt's glory.",
+    "visual_prompt": "An artistic representation of Cleopatra, with symbols of Rome and Egypt intertwined, showcasing her duality and charm.",
+    "duration_seconds": 4,
+    "mood": "inspiring",
+    "visual_type": "image"
+  },
+  {
+    "order_number": 5,
+    "narration": "And Akhenaten, the rebel pharaoh, who changed the gods and stunned the world.",
+    "visual_prompt": "A surreal depiction of Akhenaten, with rays of sunlight illuminating him, surrounded by symbols of the sun god Aten, representing his revolutionary beliefs.",
+    "duration_seconds": 5,
+    "mood": "mysterious",
+    "visual_type": "image"
+  },
+  {
+    "order_number": 6,
+    "narration": "These kings and queens shaped history, holding secrets still unsolved.",
+    "visual_prompt": "An ancient scroll unrolling, revealing faded hieroglyphics and images of the pharaohs, symbolizing the secrets of history.",
+    "duration_seconds": 4,
+    "mood": "educational",
+    "visual_type": "video"
+  },
+  {
+    "order_number": 7,
+    "narration": "So, who's your favorite?",
+    "visual_prompt": "A question mark made of sand, with the backdrop of the Nile River, inviting viewers to ponder their favorite pharaoh.",
+    "duration_seconds": 3,
+    "mood": "energetic",
+    "visual_type": "image"
+  },
+  {
+    "order_number": 8,
+    "narration": "Step into Egypt's past, where kings aren't just rulers—they're legends!",
+    "visual_prompt": "A dramatic transition to a starry night sky over the pyramids, with silhouettes of the pharaohs appearing as legends in the stars.",
+    "duration_seconds": 5,
+    "mood": "inspiring",
+    "visual_type": "video"
+  }
+]

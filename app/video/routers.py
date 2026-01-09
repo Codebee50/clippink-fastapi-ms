@@ -1,6 +1,8 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
 
 from app.config import settings
+from app.database import get_db
 from app.video.models import Video
 from app.video.schemas import ScriptToVideoRequestSchema
 from app.video.tasks import script_to_video_task
@@ -22,11 +24,18 @@ async def merge_audio_files(session_id: str):
     return {"message": "Audio files merged successfully"}
 
 @router.post("/script-to-video/")
-async def script_to_video(req_body: ScriptToVideoRequestSchema):
+async def script_to_video(req_body: ScriptToVideoRequestSchema, db: Session=Depends(get_db)):
     
-    # video = await Video.create(script=req_body.script)
+    video = Video(script=req_body.script)
+    db.add(video)
+    db.commit()
+    db.refresh(video)
     
-    script_to_video_task.delay(req_body.script)
+    video_list = db.query(Video).all()
+    
+    
+    
+    # script_to_video_task.delay(req_body.script)
     
 
-    return {"message": "Video created successfully"}
+    return {"message": "Video created successfully", "video": video_list}

@@ -1,6 +1,7 @@
 import uuid
 from langgraph.graph import END, START, StateGraph
-from app.langgraph_workflows.services import generate_scene_audio
+from langgraph.managed.base import V
+from app.langgraph_workflows.services.voice_service import VoiceService
 from app.langgraph_workflows.states import ScriptToVideoState
 from app.langgraph_workflows.schemas import SceneListSchema
 from langchain_openai import ChatOpenAI
@@ -60,26 +61,22 @@ class ScriptToVideo:
         response = structured_llm.invoke([SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=state.script)])
         return ScriptToVideoState(script=state.script, scenes=response.scenes)
     
-    
-    def _generate_eleven_labs_audio_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
-        print("Generating audio for the scenes...")
-        session_id = str(uuid.uuid4())
-        for scene in state.scenes:
-            audio_path = generate_scene_audio(scene, session_id)
-            print("Generated audio for scene: ", scene.order_number, "at: ", audio_path)
-            
+    def _generate_audio_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
+        voice_service= VoiceService(scenes=state.scenes)
+        audio_paths = voice_service.generate_scenes_audio()
         return ScriptToVideoState(script=state.script, scenes=state.scenes)
+        
 
     def build_graph(self):
         graph_builder = StateGraph(ScriptToVideoState)
         graph_builder.add_node("generate_scenes", self._generate_scenes_node)
         
         graph_builder.add_edge(START, "generate_scenes")
-        graph_builder.add_node("generate_eleven_labs_audio", self._generate_eleven_labs_audio_node)
+        graph_builder.add_node("generate_audio", self._generate_audio_node)
         
-        graph_builder.add_edge("generate_scenes", "generate_eleven_labs_audio")
+        graph_builder.add_edge("generate_scenes", "generate_audio")
         
-        graph_builder.add_edge("generate_eleven_labs_audio", END)
+        graph_builder.add_edge("generate_audio", END)
         
         self.graph = graph_builder.compile()
         return self.graph

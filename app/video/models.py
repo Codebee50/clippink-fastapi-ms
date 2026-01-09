@@ -1,21 +1,24 @@
-from tortoise.models import Model
-from tortoise import fields
+from datetime import datetime
+from sqlalchemy import Column, String, Text, DateTime, UUID, Integer, ForeignKey
 import uuid
+from app.database import Base
 
-class Video(Model):
-    id = fields.UUIDField(pk=True, default=uuid.uuid4)
-    script = fields.TextField()
-    status = fields.CharField(max_length=20, default="pending")
-    created_at = fields.DatetimeField(auto_now_add=True)
-    updated_at = fields.DatetimeField(auto_now=True)
+class Video(Base):
+    __tablename__ = "video"
+    id = Column(UUID, primary_key=True, default=uuid.uuid4)
+    script = Column(Text, nullable=False)
+    status = Column(String(20), nullable=False, default="pending")
+    created_at = Column(DateTime, nullable=False, default=datetime.now)
+    updated_at = Column(DateTime, nullable=False, default=datetime.now)
 
 
-class Scene(Model):
-    id = fields.UUIDField(pk=True, default=uuid.uuid4)
-    order_number = fields.IntField(default=0)
-    video = fields.ForeignKeyField("models.Video", related_name="scenes")
-    media_type = fields.CharField(max_length=20, default="image")
-    narration = fields.TextField(null=True) # The excerpt of the script that the scene is based on
-    duration_seconds = fields.IntField(default=0)
-    visual_prompt = fields.TextField(null=True)
-    mood = fields.CharField(max_length=20, null=True)
+class Scene(Base):
+    __tablename__ = "scene"
+    id = Column(UUID, primary_key=True, default=lambda: str(uuid.uuid4()))
+    order_number = Column(Integer, nullable=False, default=0)
+    video_id = Column(UUID, ForeignKey("video.id"), nullable=False)
+    media_type = Column(String(20), nullable=False, default="image")
+    narration = Column(Text, nullable=True)
+    duration_seconds = Column(Integer, nullable=False, default=0)
+    visual_prompt = Column(Text, nullable=True)
+    mood = Column(String(20), nullable=True)

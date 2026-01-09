@@ -2,13 +2,10 @@ from celery import shared_task
 
 from app.langgraph_workflows.graphs.script_to_video_processor import ScriptToVideo
 from app.langgraph_workflows.states import ScriptToVideoState
-from app.video.models import Video
 import asyncio
 
 async def process_script_to_video(video_id: str):
-    video = await Video.get(id=video_id)
-    if not video:
-        raise ValueError(f"Video with ID {video_id} not found")
+    pass
     
 
 

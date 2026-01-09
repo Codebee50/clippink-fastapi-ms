@@ -64,7 +64,8 @@ def generate_scene_audio(scene: SceneSchema, session_id: str):
         voice_id=VOICE_ID,
         text=narration,
         output_format="mp3_44100_128",
-        model_id="eleven_multilingual_v2"
+        model_id="eleven_multilingual_v2",
+        # voice_settings=voice_settings
     )
     
     session_dir = settings.OUTPUT_DIR / f"{session_id}"
@@ -76,3 +77,13 @@ def generate_scene_audio(scene: SceneSchema, session_id: str):
             f.write(chunk)
             
     return audio_path
+
+
+        
+
+
+class ImageService:
+    def __init__(self):
+        pass
+    
+    

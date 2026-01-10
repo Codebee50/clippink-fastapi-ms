@@ -6,8 +6,15 @@ from app.config import settings
 from app.database import Base
 
 from alembic import context
+import importlib
 
-from app.video.models import *
+
+#this function loads all the models from the configured app modules in config.py
+def load_all_models():
+    for app in settings.APP_MODULES:
+        importlib.import_module(app.db_models)
+
+load_all_models()
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

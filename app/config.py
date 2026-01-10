@@ -3,6 +3,7 @@ from pathlib import Path
 from pydantic_settings import BaseSettings
 from dotenv import load_dotenv
 from functools import cached_property
+import boto3
 
 load_dotenv()
 
@@ -20,26 +21,24 @@ class Settings(BaseSettings):
     CELERY_RESULT_BACKEND: str = "redis://localhost:6379"
     DATABASE_URL: str = "sqlite://db.sqlite3"
     OUTPUT_DIR: Path = Path("elevenlabs_audio")
+    AWS_ACCESS_KEY_ID: str = "YOUR_AWS_ACCESS_KEY_ID"
+    AWS_SECRET_ACCESS_KEY: str = "YOUR_AWS_SECRET_ACCESS_KEY"
+    AWS_REGION: str = "YOUR_AWS_REGION"
+    AWS_BUCKET_NAME: str = "YOUR_AWS_BUCKET_NAME"
+    REPLICATE_API_TOKEN: str = "YOUR_REPLICATE_API_TOKEN"
+    
     
     APP_MODULES: list[AppModule] = [
        AppModule(name="video", module="app.video", db_models="app.video.models")
     ]
     
-    @cached_property    
-    def TORTOISE_ORM_CONFIG(self): 
-        return {
-            "connections": {
-                "default": self.DATABASE_URL
-                # PostgreSQL example: "postgres://user:password@localhost:5432/dbname"
-                # MySQL example: "mysql://user:password@localhost:3306/dbname"
-            },
-            "apps": {
-                "models": {
-                    "models": [app.db_models for app in self.APP_MODULES],
-                    "default_connection": "default",
-                }
-            },
-        }
+    def get_s3_client(self) -> boto3.client:
+        return boto3.client(
+            "s3",
+            aws_access_key_id=self.AWS_ACCESS_KEY_ID,
+            aws_secret_access_key=self.AWS_SECRET_ACCESS_KEY,
+            region_name=self.AWS_REGION
+        )
     
     class Config:
         env_file = ".env"

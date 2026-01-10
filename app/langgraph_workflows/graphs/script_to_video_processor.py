@@ -1,18 +1,26 @@
 import uuid
 from langgraph.graph import END, START, StateGraph
 from langgraph.managed.base import V
+from app.common.utils import get_url_from_s3_key
+from app.database import get_db_session
+from app.langgraph_workflows.services.image_service import ImageService
 from app.langgraph_workflows.services.voice_service import VoiceService
 from app.langgraph_workflows.states import ScriptToVideoState
-from app.langgraph_workflows.schemas import SceneListSchema
+from app.langgraph_workflows.schemas import GeneratedSceneListSchema, SceneListSchema, SceneSchema
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
+import logging
 
+from app.video.models import Scene, Video, VideoStatus
+
+logger = logging.getLogger(__name__)
 
 class ScriptToVideo:
     def __init__(self):
         self.graph= None
 
     def _generate_scenes_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
+        logger.info(f"Generating scenes for video: {state.video_id}")
         SYSTEM_PROMPT = """
             You are a professional short-form video director and storyboard artist.
 
@@ -57,15 +65,67 @@ class ScriptToVideo:
             }
         """
         llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
-        structured_llm = llm.with_structured_output(SceneListSchema)
+        structured_llm = llm.with_structured_output(GeneratedSceneListSchema)
         response = structured_llm.invoke([SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=state.script)])
-        return ScriptToVideoState(script=state.script, scenes=response.scenes)
+        
+        scenes = [SceneSchema(**scene.model_dump()) for scene in response.scenes]
+        
+        with get_db_session() as db:
+            video = db.query(Video).filter(Video.id == state.video_id).first()
+            if video and video.status == VideoStatus.pending:
+                video.status= VideoStatus.processing
+                db.commit()
+                
+        logger.info(f"Scenes generated for video: {state.video_id} successfully")
+        return ScriptToVideoState(script=state.script, scenes=scenes, video_id=state.video_id)
     
     def _generate_audio_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
-        voice_service= VoiceService(scenes=state.scenes)
-        audio_paths = voice_service.generate_scenes_audio()
-        return ScriptToVideoState(script=state.script, scenes=state.scenes)
+        logger.info(f"Generating audio for video: {state.video_id}")
+        voice_service= VoiceService(scenes=state.scenes, video_id=state.video_id)
+        final_audio_key = voice_service.generate_scenes_audio()
+          
+        logger.info(f"Audio generated for video: {state.video_id} successfully")
+        return ScriptToVideoState(script=state.script, scenes=voice_service.scenes, video_id=state.video_id, final_audio_key=final_audio_key)
+    
+    def _generate_images_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
+        logger.info(f"Generating images for video: {state.video_id}")
+        image_service = ImageService(scenes=state.scenes)
+        image_service.generate_images()
         
+        logger.info(f"Images generated for video: {state.video_id} successfully")
+        return ScriptToVideoState(script=state.script, scenes=image_service.scenes, video_id=state.video_id, final_audio_key=state.final_audio_key)
+    
+    def _persist_results_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
+        logger.info(f"Persisting results for video: {state.video_id} to database")
+        with get_db_session() as db:
+            video = db.query(Video).filter(Video.id == state.video_id).first()
+            if video and video.status == VideoStatus.processing:
+                video.status = VideoStatus.completed
+                video.final_audio_key = state.final_audio_key
+                video.final_audio_url = get_url_from_s3_key(state.final_audio_key)
+                db.commit()
+                
+                for scene in state.scenes:
+                    scene_model = Scene(
+                        order_number = scene.order_number,
+                        video_id = state.video_id,
+                        media_type = scene.visual_type,
+                        narration = scene.narration,
+                        duration_seconds = scene.duration_seconds,
+                        visual_prompt = scene.visual_prompt,
+                        mood = scene.mood,
+                        audio_url = scene.audio_url,
+                        audio_file_key = scene.audio_file_key,
+                        image_url = scene.image_url,
+                        image_file_key = scene.image_file_key,
+                        video_url = scene.video_url,
+                        video_file_key = scene.video_file_key,
+                    )
+                    db.add(scene_model)
+                db.commit()
+                
+        logger.info(f"Results persisted for video: {state.video_id} successfully")
+        return ScriptToVideoState(script=state.script, scenes=state.scenes, video_id=state.video_id, final_audio_key=state.final_audio_key)
 
     def build_graph(self):
         graph_builder = StateGraph(ScriptToVideoState)
@@ -76,7 +136,15 @@ class ScriptToVideo:
         
         graph_builder.add_edge("generate_scenes", "generate_audio")
         
-        graph_builder.add_edge("generate_audio", END)
+        graph_builder.add_node("generate_images", self._generate_images_node)
         
+        graph_builder.add_edge("generate_audio", "generate_images")
+        
+        graph_builder.add_node("persist_results", self._persist_results_node)
+        
+        graph_builder.add_edge("generate_images", "persist_results")
+        
+        graph_builder.add_edge("persist_results", END)
+                
         self.graph = graph_builder.compile()
         return self.graph

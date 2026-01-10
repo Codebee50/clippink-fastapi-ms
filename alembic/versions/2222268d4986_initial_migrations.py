@@ -1,8 +1,8 @@
-"""Add video and scenes models
+"""Initial migrations
 
-Revision ID: 0f267821e015
-Revises: 600547094bce
-Create Date: 2026-01-09 19:16:47.403934
+Revision ID: 2222268d4986
+Revises: 
+Create Date: 2026-01-09 21:30:12.013147
 
 """
 from typing import Sequence, Union
@@ -12,8 +12,8 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision: str = '0f267821e015'
-down_revision: Union[str, Sequence[str], None] = '600547094bce'
+revision: str = '2222268d4986'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
@@ -38,6 +38,10 @@ def upgrade() -> None:
     sa.Column('duration_seconds', sa.Integer(), nullable=False),
     sa.Column('visual_prompt', sa.Text(), nullable=True),
     sa.Column('mood', sa.String(length=20), nullable=True),
+    sa.Column('audio_url', sa.String(length=255), nullable=True),
+    sa.Column('audio_file_key', sa.String(length=255), nullable=True),
+    sa.Column('image_url', sa.String(length=255), nullable=True),
+    sa.Column('image_file_key', sa.String(length=255), nullable=True),
     sa.ForeignKeyConstraint(['video_id'], ['video.id'], ),
     sa.PrimaryKeyConstraint('id')
     )

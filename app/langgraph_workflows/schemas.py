@@ -8,7 +8,7 @@ class GeneratedSceneSchema(BaseModel):
     visual_prompt: str = Field(..., description="A concise but vivid description of what should be shown visually")
     duration_seconds: int = Field(..., description="The duration of the scene in seconds")
     mood: Literal["dramatic", "mysterious", "inspiring", "educational", "energetic"] = Field(..., description="The mood of the scene")
-    visual_type: str = Field(..., description="The type of visual media to be generated")
+    # visual_type: str = Field(..., description="The type of visual media to be generated")
 
 
 class GeneratedSceneListSchema(BaseModel):

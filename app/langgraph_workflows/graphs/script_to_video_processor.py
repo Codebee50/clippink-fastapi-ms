@@ -37,9 +37,8 @@ class ScriptToVideo:
 
             FOR EACH SCENE, GENERATE:
             - narration: The exact line or sentence spoken in that scene (do not rewrite unless necessary for clarity).
-            - visual_prompt: A concise but vivid description of what should be shown visually.
+            - visual_prompt: A concise but vivid description of the image to be generated for this scene i.e what should be shown visually.
             - duration_seconds: Estimated duration (between 2 and 6 seconds).
-            - visual_type: One of ["image", "video"].
             - mood: One of ["dramatic", "mysterious", "inspiring", "educational", "energetic"].
 
             CONSTRAINTS:
@@ -58,7 +57,6 @@ class ScriptToVideo:
                     "narration": "",
                     "visual_prompt": "",
                     "duration_seconds": 0,
-                    "visual_type": "",
                     "mood": ""
                     }
                 ]
@@ -68,7 +66,7 @@ class ScriptToVideo:
         structured_llm = llm.with_structured_output(GeneratedSceneListSchema)
         response = structured_llm.invoke([SystemMessage(content=SYSTEM_PROMPT), HumanMessage(content=state.script)])
         
-        scenes = [SceneSchema(**scene.model_dump()) for scene in response.scenes]
+        scenes = [SceneSchema(**scene.model_dump(), visual_type='image') for scene in response.scenes]
         
         with get_db_session() as db:
             video = db.query(Video).filter(Video.id == state.video_id).first()
@@ -89,7 +87,7 @@ class ScriptToVideo:
     
     def _generate_images_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
         logger.info(f"Generating images for video: {state.video_id}")
-        image_service = ImageService(scenes=state.scenes)
+        image_service = ImageService(scenes=state.scenes, video_id=state.video_id)
         image_service.generate_images()
         
         logger.info(f"Images generated for video: {state.video_id} successfully")

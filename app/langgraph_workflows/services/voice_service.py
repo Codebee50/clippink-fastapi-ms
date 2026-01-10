@@ -46,7 +46,6 @@ class VoiceService:
         return self._generate_scenes_audio_eleven_labs()
     
     def _generate_scenes_audio_eleven_labs(self) -> str:
-        audio_segments = []
         final_audio = AudioSegment.empty()
         
         for scene in sorted(self.scenes, key=lambda x: x.order_number):
@@ -69,11 +68,14 @@ class VoiceService:
             scene.audio_url = audio_url
             
             audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_bytes))
-            audio_segments.append(audio_segment)
+            final_audio += audio_segment
+        
+        
+        final_audio_buffer=  io.BytesIO()
+        final_audio.export(final_audio_buffer, format="mp3", bitrate="128k")
+        final_audio_buffer.seek(0)
             
-  
-    
-        final_audio_key, _ = self._upload_audio_chunk_to_s3(final_audio, mark_final=True)
+        final_audio_key, _ = self._upload_audio_chunk_to_s3(final_audio_buffer.read(), mark_final=True)
         
         logger.info(f"Final audio for video: {self.video_id} successfully uploaded to s3 at url: {get_url_from_s3_key(final_audio_key)}")
         return final_audio_key

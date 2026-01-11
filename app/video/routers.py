@@ -3,13 +3,25 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.config import settings
 from app.database import get_db
-from app.video.models import Video
+from app.video.models import Video, VideoStatus
 from app.video.schemas import ScriptToVideoRequestSchema
 from app.video.tasks import script_to_video_task
 from pydub import AudioSegment
 from fastapi import HTTPException
 router = APIRouter()
 
+@router.post("/compile-video/{video_id}")
+async def compile_video(video_id:str, db: Session=Depends(get_db)):
+    video= db.query(Video).filter(Video.id == video_id).first()
+    if not video:
+        raise HTTPException(status_code=404, detail="Video not found")
+    
+    if video.status != VideoStatus.completed:
+        raise HTTPException(status_code=400, detail="Video is not completed")
+    
+    return {"message": "Video compiled successfully"}
+
+    
 
 @router.get("/{video_id}/")
 async def get_video_by_id(video_id: str, db: Session=Depends(get_db)):

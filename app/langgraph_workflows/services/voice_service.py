@@ -17,20 +17,17 @@ class VoiceService:
         self.scenes = scenes
         self.video_id = video_id
     
-    def _upload_audio_chunk_to_s3(self, audio_chunk, mark_final: bool=False)-> Tuple[str, str]:
+    def _upload_audio_chunk_to_s3(self, audio_bytes: bytes, mark_final: bool=False)-> Tuple[str, str]:
         try:
-            
             s3_client = settings.get_s3_client()
         except Exception as e:
             pass
-        
-        audio_chunk_data = b"".join(chunk for chunk in audio_chunk)
         
         key = f"audios/{self.video_id}/{'final_' if mark_final else ''}{uuid.uuid4()}.mp3"
         s3_client.put_object(
             Bucket = settings.AWS_BUCKET_NAME,
             Key = key,
-            Body = audio_chunk_data,
+            Body = audio_bytes,
             ContentType = "audio/mpeg"
         )
         
@@ -63,7 +60,7 @@ class VoiceService:
             
             audio_bytes = b"".join(chunk for chunk in audio)
 
-            audio_file_key, audio_url = self._upload_audio_chunk_to_s3(audio, scene.order_number)
+            audio_file_key, audio_url = self._upload_audio_chunk_to_s3(audio_bytes, scene.order_number)
             scene.audio_file_key = audio_file_key
             scene.audio_url = audio_url
             

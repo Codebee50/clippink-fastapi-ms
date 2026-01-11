@@ -12,6 +12,8 @@ from langchain_core.messages import SystemMessage, HumanMessage
 import logging
 
 from app.video.models import Scene, Video, VideoStatus
+import asyncio
+
 
 logger = logging.getLogger(__name__)
 
@@ -88,9 +90,8 @@ class ScriptToVideo:
     def _generate_images_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
         logger.info(f"Generating images for video: {state.video_id}")
         image_service = ImageService(scenes=state.scenes, video_id=state.video_id)
-        image_service.generate_images()
-        
-        logger.info(f"Images generated for video: {state.video_id} successfully")
+        image_urls =  asyncio.run(image_service.generate_images())
+        logger.info(f"Images generated for video: {state.video_id} successfully, image urls: {image_urls}")
         return ScriptToVideoState(script=state.script, scenes=image_service.scenes, video_id=state.video_id, final_audio_key=state.final_audio_key)
     
     def _persist_results_node(self, state: ScriptToVideoState) -> ScriptToVideoState:

@@ -13,6 +13,9 @@ from aiolimiter import AsyncLimiter
 import time
 logger = logging.getLogger(__name__)
 
+
+
+
 class ImageService:
     _concurrency_limit = asyncio.Semaphore(5) #ensure you dont exceed n concurrent api calls i.e you dont call the api more than n times at the same time
     _rate_limit = AsyncLimiter(max_rate=3, time_period=60) #ensure you dont exceed max_rate api calls per time_period seconds

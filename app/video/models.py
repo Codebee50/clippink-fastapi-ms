@@ -1,5 +1,5 @@
 from datetime import datetime
-from sqlalchemy import Column, String, Text, DateTime, UUID, Integer, ForeignKey
+from sqlalchemy import Column, String, Text, DateTime, UUID, Integer, ForeignKey, Float
 import uuid
 from app.database import Base
 from enum import Enum
@@ -39,5 +39,5 @@ class Scene(Base):
     image_file_key = Column(String(255), nullable=True)
     video_url = Column(String(255), nullable=True)
     video_file_key = Column(String(255), nullable=True)
-    
+    audio_duration_seconds = Column(Float, default=1)
     video = relationship("Video", back_populates="scenes")

@@ -5,7 +5,7 @@ from app.config import settings
 from app.database import get_db
 from app.video.models import Video, VideoStatus
 from app.video.schemas import ScriptToVideoRequestSchema
-from app.video.tasks import script_to_video_task
+from app.video.tasks import compile_video_task, script_to_video_task
 from pydub import AudioSegment
 from fastapi import HTTPException
 router = APIRouter()
@@ -18,6 +18,8 @@ async def compile_video(video_id:str, db: Session=Depends(get_db)):
     
     if video.status != VideoStatus.completed:
         raise HTTPException(status_code=400, detail="Video is not completed")
+    
+    compile_video_task.delay(video_id)
     
     return {"message": "Video compiled successfully"}
 

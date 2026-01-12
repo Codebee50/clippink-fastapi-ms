@@ -1,6 +1,5 @@
 from app.config import settings
 import aiohttp
-import asyncio
 
 
 async def download_file_remote_to_local(remote_url: str, local_path: str) -> str:

@@ -5,7 +5,7 @@ from app.common.utils import get_url_from_s3_key
 from app.database import get_db_session
 from app.langgraph_workflows.services.image_service import ImageService
 from app.langgraph_workflows.services.voice_service import VoiceService
-from app.langgraph_workflows.states import ScriptToVideoState
+from app.langgraph_workflows.states import AssetGeneratorState
 from app.langgraph_workflows.schemas import GeneratedSceneListSchema, SceneListSchema, SceneSchema
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
@@ -17,11 +17,11 @@ import asyncio
 
 logger = logging.getLogger(__name__)
 
-class ScriptToVideo:
+class AssetGenerator:
     def __init__(self):
         self.graph= None
 
-    def _generate_scenes_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
+    def _generate_scenes_node(self, state: AssetGeneratorState) -> AssetGeneratorState:
         logger.info(f"Generating scenes for video: {state.video_id}")
         SYSTEM_PROMPT = """
             You are a professional short-form video director and storyboard artist.
@@ -77,24 +77,24 @@ class ScriptToVideo:
                 db.commit()
                 
         logger.info(f"Scenes generated for video: {state.video_id} successfully")
-        return ScriptToVideoState(script=state.script, scenes=scenes, video_id=state.video_id)
+        return AssetGeneratorState(script=state.script, scenes=scenes, video_id=state.video_id)
     
-    def _generate_audio_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
+    def _generate_audio_node(self, state: AssetGeneratorState) -> AssetGeneratorState:
         logger.info(f"Generating audio for video: {state.video_id}")
         voice_service= VoiceService(scenes=state.scenes, video_id=state.video_id)
         final_audio_key = voice_service.generate_scenes_audio()
           
         logger.info(f"Audio generated for video: {state.video_id} successfully")
-        return ScriptToVideoState(script=state.script, scenes=voice_service.scenes, video_id=state.video_id, final_audio_key=final_audio_key)
+        return AssetGeneratorState(script=state.script, scenes=voice_service.scenes, video_id=state.video_id, final_audio_key=final_audio_key)
     
-    def _generate_images_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
+    def _generate_images_node(self, state: AssetGeneratorState) -> AssetGeneratorState:
         logger.info(f"Generating images for video: {state.video_id}")
         image_service = ImageService(scenes=state.scenes, video_id=state.video_id)
         image_urls =  asyncio.run(image_service.generate_images())
         logger.info(f"Images generated for video: {state.video_id} successfully, image urls: {image_urls}")
-        return ScriptToVideoState(script=state.script, scenes=image_service.scenes, video_id=state.video_id, final_audio_key=state.final_audio_key)
+        return AssetGeneratorState(script=state.script, scenes=image_service.scenes, video_id=state.video_id, final_audio_key=state.final_audio_key)
     
-    def _persist_results_node(self, state: ScriptToVideoState) -> ScriptToVideoState:
+    def _persist_results_node(self, state: AssetGeneratorState) -> AssetGeneratorState:
         logger.info(f"Persisting results for video: {state.video_id} to database")
         with get_db_session() as db:
             video = db.query(Video).filter(Video.id == state.video_id).first()
@@ -124,10 +124,10 @@ class ScriptToVideo:
                 db.commit()
                 
         logger.info(f"Results persisted for video: {state.video_id} successfully")
-        return ScriptToVideoState(script=state.script, scenes=state.scenes, video_id=state.video_id, final_audio_key=state.final_audio_key)
+        return AssetGeneratorState(script=state.script, scenes=state.scenes, video_id=state.video_id, final_audio_key=state.final_audio_key)
 
     def build_graph(self):
-        graph_builder = StateGraph(ScriptToVideoState)
+        graph_builder = StateGraph(AssetGeneratorState)
         graph_builder.add_node("generate_scenes", self._generate_scenes_node)
         
         graph_builder.add_edge(START, "generate_scenes")

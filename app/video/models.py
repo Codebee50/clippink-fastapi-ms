@@ -1,5 +1,6 @@
 from datetime import datetime
 from sqlalchemy import Column, String, Text, DateTime, UUID, Integer, ForeignKey, Float
+from sqlalchemy.dialects.postgresql import JSONB
 import uuid
 from app.database import Base
 from enum import Enum
@@ -41,3 +42,4 @@ class Scene(Base):
     video_file_key = Column(String(255), nullable=True)
     audio_duration_seconds = Column(Float, default=1)
     video = relationship("Video", back_populates="scenes")
+    captions = Column(JSONB, nullable=True)

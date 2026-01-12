@@ -34,13 +34,11 @@ class AssetGenerator:
             - Break the script into clear, sequential scenes.
             - Each scene must represent a single visual idea.
             - Scenes must flow naturally and follow the order of the script.
-            - Do NOT include on-screen humans unless explicitly implied by the narration.
             - Optimize pacing for short-form content (TikTok, Reels, Shorts).
 
             FOR EACH SCENE, GENERATE:
             - narration: The exact line or sentence spoken in that scene (do not rewrite unless necessary for clarity).
             - visual_prompt: A concise but vivid description of the image to be generated for this scene i.e what should be shown visually.
-            - duration_seconds: Estimated duration (between 2 and 6 seconds).
             - mood: One of ["dramatic", "mysterious", "inspiring", "educational", "energetic"].
 
             CONSTRAINTS:
@@ -58,7 +56,6 @@ class AssetGenerator:
                     "order_number": 1,
                     "narration": "",
                     "visual_prompt": "",
-                    "duration_seconds": 0,
                     "mood": ""
                     }
                 ]
@@ -119,6 +116,7 @@ class AssetGenerator:
                         image_file_key = scene.image_file_key,
                         video_url = scene.video_url,
                         video_file_key = scene.video_file_key,
+                        captions = scene.captions
                     )
                     db.add(scene_model)
                 db.commit()

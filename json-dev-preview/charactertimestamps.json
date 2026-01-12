@@ -1,0 +1,58 @@
+[
+  {
+    "text": "This is the",
+    "start": 0.0,
+    "end": 0.453,
+    "words": [
+      {
+        "text": "This",
+        "start": 0.0,
+        "end": 0.197
+      },
+      {
+        "text": "is",
+        "start": 0.255,
+        "end": 0.337
+      },
+      {
+        "text": "the",
+        "start": 0.383,
+        "end": 0.453
+      }
+    ]
+  },
+  {
+    "text": "real cost of",
+    "start": 0.511,
+    "end": 1.01,
+    "words": [
+      {
+        "text": "real",
+        "start": 0.511,
+        "end": 0.673
+      },
+      {
+        "text": "cost",
+        "start": 0.731,
+        "end": 0.917
+      },
+      {
+        "text": "of",
+        "start": 0.964,
+        "end": 1.01
+      }
+    ]
+  },
+  {
+    "text": "convenience.",
+    "start": 1.057,
+    "end": 2.043,
+    "words": [
+      {
+        "text": "convenience.",
+        "start": 1.057,
+        "end": 2.043
+      }
+    ]
+  }
+]

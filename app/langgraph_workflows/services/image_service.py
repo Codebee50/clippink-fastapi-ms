@@ -45,10 +45,33 @@ class ImageService:
     async def _generate_single_image(self, scene, aspect_ratio="9:16") -> str:
         async with self._concurrency_limit:
             async with self._rate_limit:
-                return await self._generate_image_seedream(scene, aspect_ratio)
+                return await self._generate_image_stability(scene, aspect_ratio)
+            
+            
+    async def _generate_image_stability(self, scene: SceneSchema, aspect_ratio="9:16")-> str:
+        logger.info(f"Generating image for scene: {scene.order_number} using stability")
+        
+        loop = asyncio.get_running_loop()
+        output = await loop.run_in_executor(
+            None,
+            lambda: replicate.run(
+                "stability-ai/stable-diffusion-3.5-large",
+                input={
+                    "cfg": 4.5,
+                    'prompt': scene.visual_prompt
+                }
+            )
+        )
+
+        s3_key = await self._upload_image_to_s3(output.url, "jpeg")
+        scene.image_url = get_url_from_s3_key(s3_key)
+        scene.image_file_key = s3_key
+        
+        return self._upload_image_to_s3(output.url, "jpeg")
+        
     
     async def _generate_image_seedream(self, scene: SceneSchema, aspect_ratio="9:16")-> str:
-        logger.info(f"Generating image for scene: {scene.order_number}")
+        logger.info(f"Generating image for scene: {scene.order_number} using seeddream")
         
         loop = asyncio.get_running_loop()
         output = await loop.run_in_executor(

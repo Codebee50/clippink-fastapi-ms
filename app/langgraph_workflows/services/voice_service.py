@@ -7,6 +7,7 @@ import uuid
 from app.config import settings
 from typing import Tuple
 import io
+import json
 elevenlabs_client = ElevenLabs(api_key=settings.ELEVEN_LABS_API_KEY)
 VOICE_ID = "j9jfwdrw7BRfcR43Qohk"
 
@@ -50,7 +51,7 @@ class VoiceService:
             narration = scene.narration
             
             #note: eleven labs yields audio data as an iterable of chunks
-            audio = elevenlabs_client.text_to_speech.convert(
+            response = elevenlabs_client.text_to_speech.convert_with_timestamps(
                 voice_id=VOICE_ID,
                 text=narration,
                 output_format="mp3_44100_128",
@@ -58,21 +59,74 @@ class VoiceService:
                 # voice_settings=voice_settings
             )
             
-            audio_bytes = b"".join(chunk for chunk in audio)
+            import base64
+            
+            audio_bytes = base64.b64decode(response.audio_base_64)
+            # audio_bytes = b"".join(chunk for chunk in response.audio_base_64)
+            alignment = response.alignment
+            
+            word_timings = self._process_alignment_to_word_timings(alignment, narration)
+            print(f"Word timings for scene: {scene.narration} are: {json.dumps(word_timings, indent=4)}")
 
             audio_file_key, audio_url = self._upload_audio_chunk_to_s3(audio_bytes, scene.order_number)
-            scene.audio_file_key = audio_file_key
-            scene.audio_url = audio_url
+            
+            print(f"Uploaded audio chunk for scene: {scene.narration} to s3 at url: {audio_url}")
+
             
             audio_segment = AudioSegment.from_mp3(io.BytesIO(audio_bytes))
             final_audio += audio_segment
-        
-        
-        final_audio_buffer=  io.BytesIO()
+            
+            scene.audio_file_key = audio_file_key
+            scene.audio_url = audio_url
+            
+            scene.duration_seconds = len(audio_segment) / 1000.0
+            scene.captions = word_timings
+    
+        final_audio_buffer =  io.BytesIO()
         final_audio.export(final_audio_buffer, format="mp3", bitrate="128k")
         final_audio_buffer.seek(0)
             
         final_audio_key, _ = self._upload_audio_chunk_to_s3(final_audio_buffer.read(), mark_final=True)
         
-        logger.info(f"Final audio for video: {self.video_id} successfully uploaded to s3 at url: {get_url_from_s3_key(final_audio_key)}")
+        print(f"Final audio for video: {self.video_id} successfully uploaded to s3 at url: {get_url_from_s3_key(final_audio_key)}")
         return final_audio_key
+    
+    def _process_alignment_to_word_timings(self, alignment, text: str) -> list:
+        if not alignment:
+            return []
+        
+        words = text.split()
+        word_timings = []
+        char_index = 0
+        
+        for word in words:
+            word_start_char = char_index
+            word_end_char = char_index + len(word)
+            
+            if word_start_char < len(alignment.character_start_times_seconds):
+                start_time = alignment.character_start_times_seconds[word_start_char]
+                end_time = alignment.character_end_times_seconds[min(word_end_char -1, len(alignment.character_end_times_seconds) - 1)]
+                
+                word_timings.append({
+                    "text": word,
+                    "start": start_time,
+                    "end": end_time
+                })
+                
+                #move past the word and any whitespace 
+                char_index = word_end_char
+                while char_index < len(text) and text[char_index].isspace():
+                    char_index += 1
+            
+        phrase_timings = []
+        phrase_size = 3
+        for i in range(0, len(word_timings), phrase_size):
+            phrase_words = word_timings[i:i + phrase_size]
+            phrase_timings.append({
+                "text": " ".join(word["text"] for word in phrase_words),
+                "start": phrase_words[0]["start"],
+                "end": phrase_words[-1]["end"],
+                "words": phrase_words
+            })
+        return phrase_timings
+            

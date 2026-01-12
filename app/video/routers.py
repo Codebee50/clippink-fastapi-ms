@@ -10,7 +10,7 @@ from pydub import AudioSegment
 from fastapi import HTTPException
 router = APIRouter()
 
-@router.post("/compile-video/{video_id}")
+@router.post("/compile-video/{video_id}/")
 async def compile_video(video_id:str, db: Session=Depends(get_db)):
     video= db.query(Video).filter(Video.id == video_id).first()
     if not video:

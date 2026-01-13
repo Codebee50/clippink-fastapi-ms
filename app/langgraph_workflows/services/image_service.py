@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class ImageService:
-    _concurrency_limit = asyncio.Semaphore(5) #ensure you dont exceed n concurrent api calls i.e you dont call the api more than n times at the same time
+    _concurrency_limit = asyncio.Semaphore(2) #ensure you dont exceed n concurrent api calls i.e you dont call the api more than n times at the same time
     _rate_limit = AsyncLimiter(max_rate=3, time_period=60) #ensure you dont exceed max_rate api calls per time_period seconds
     
     
@@ -45,7 +45,7 @@ class ImageService:
     async def _generate_single_image(self, scene, aspect_ratio="9:16") -> str:
         async with self._concurrency_limit:
             async with self._rate_limit:
-                return await self._generate_image_stability(scene, aspect_ratio)
+                return await self._generate_image_seedream(scene, aspect_ratio)
             
             
     async def _generate_image_stability(self, scene: SceneSchema, aspect_ratio="9:16")-> str:
@@ -73,15 +73,14 @@ class ImageService:
     async def _generate_image_seedream(self, scene: SceneSchema, aspect_ratio="9:16")-> str:
         logger.info(f"Generating image for scene: {scene.order_number} using seeddream")
         
+        
         loop = asyncio.get_running_loop()
         output = await loop.run_in_executor(
             None,
             lambda: replicate.run(
                 "bytedance/seedream-4",
                 input={
-                    "size": "2K",
-                    "width": 2048,
-                    "height": 2048,
+                    "size": "1K",
                     "prompt": scene.visual_prompt,
                     "max_images": 1,
                     "image_input": [],
@@ -98,7 +97,7 @@ class ImageService:
         scene.image_url = get_url_from_s3_key(s3_key)
         scene.image_file_key = s3_key
             
-        return self._upload_image_to_s3(output[0].url, "jpeg")
+        return scene.image_url
 
     async def _upload_image_to_s3(self, image_url: str, image_format: str="png") -> str:
         try:

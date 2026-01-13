@@ -7,6 +7,8 @@ async def download_file_remote_to_local(remote_url: str, local_path: str) -> str
         async with session.get(remote_url) as response:
             response.raise_for_status()
         
+            import os
+            os.makedirs(os.path.dirname(local_path), exist_ok=True)
             with open(local_path, "wb") as f:
                 f.write(await response.read())
     return local_path
